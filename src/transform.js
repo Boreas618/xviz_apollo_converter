@@ -13,54 +13,33 @@
 // limitations under the License.
 
 /* eslint-disable camelcase */
+import fs from 'fs'
 import {FileSink} from '@xviz/io/node';
 import {XVIZBinaryWriter, XVIZJSONWriter, XVIZProtobufWriter} from '@xviz/io';
 
-import {KittiConverter} from './converters';
+import {ApolloConverter} from './apollo-converter';
 
 import process from 'process';
 
-module.exports = async function main(args) {
-  const {
-    inputDir,
-    outputDir,
-    disabledStreams,
-    fakeStreams,
-    messageLimit,
-    cameraSources,
-    imageMaxWidth,
-    imageMaxHeight,
-    writeJson,
-    writeProtobuf
-  } = args;
+module.exports = async function main() {
+
+  const data = JSON.parse(
+      fs.readFileSync("/Users/sunyi/WebstormProjects/apollo-converter/src/data/data.json","utf8")
+  );
 
   // This object orchestrates any data dependencies between the data sources
   // and delegates to the individual converters
-  const converter = new KittiConverter(inputDir, outputDir, {
-    disabledStreams,
-    fakeStreams,
-    imageMaxWidth,
-    imageMaxHeight
-  });
-
-  console.log(`Converting KITTI data at ${inputDir}`); // eslint-disable-line
-  console.log(`Saving to ${outputDir}`); // eslint-disable-line
+  const converter = new ApolloConverter(data);
 
   converter.initialize();
 
   // This abstracts the details of the filenames expected by our server
-  const sink = new FileSink(outputDir);
-  let xvizWriter = null;
-  if (writeJson) {
-    xvizWriter = new XVIZJSONWriter(sink);
-  } else if (writeProtobuf) {
-    xvizWriter = new XVIZProtobufWriter(sink);
-  } else {
-    xvizWriter = new XVIZBinaryWriter(sink);
-  }
+  const sink = new FileSink("/Users/sunyi/WebstormProjects/apollo-converter/src/data_op");
+  let xvizWriter = new XVIZBinaryWriter(sink);
+
 
   // Write metadata file
-  const xvizMetadata = converter.getMetadata();
+  const xvizMetadata = converter.getMetaData();
   xvizWriter.writeMetadata(xvizMetadata);
 
   // If we get interrupted make sure the index is written out
@@ -68,7 +47,7 @@ module.exports = async function main(args) {
 
   const start = Date.now();
 
-  const limit = Math.min(messageLimit, converter.messageCount());
+  const limit = 105;
   // Convert each message and write it to a file
   //
   // A *message* is a point in time, where each message will contain
@@ -81,6 +60,7 @@ module.exports = async function main(args) {
   // any unnecessary complications
   for (let i = 0; i < limit; i++) {
     const xvizMessage = await converter.convertMessage(i);
+    console.log(JSON.stringify(xvizMessage));
     xvizWriter.writeMessage(i, xvizMessage);
   }
 
