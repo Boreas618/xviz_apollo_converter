@@ -72,11 +72,11 @@ export default class GPSConverter extends BaseConverter {
             Math.min(messageIndex + 10, this.poses.length)
         );
 
-        console.log(poseTrajectory);
+        //console.log(poseTrajectory);
 
         xvizBuilder.primitive(this.VEHICLE_TRAJECTORY).polyline(poseTrajectory);
 
-        console.log(xvizBuilder);
+        //console.log(xvizBuilder);
     }
 
     _convertPose(){
@@ -152,7 +152,7 @@ export default class GPSConverter extends BaseConverter {
 
     _getPoseTrajectory(startFrame, endFrame) {
         const originX = this.poses[0].pose.positionX;
-        const originY = this.poses[0].pose.positionX;
+        const originY = this.poses[0].pose.positionY;
         const originZ = 0;
         const futurePoses = [];
         for (let i = startFrame; i < endFrame; i++) {
