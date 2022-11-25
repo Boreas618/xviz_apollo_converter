@@ -60,7 +60,7 @@ export class ApolloConverter {
         // Keeping this general data centralized makes it easy to find and change.
         const xb = new XVIZMetadataBuilder();
         //console.log(this.timestamps[0] + ' -> '+this.timestamps[this.timestamps.length - 1]);
-        xb.startTime(this.timestamps[0]).endTime(this.timestamps[this.timestamps.length - 1]);
+        xb.startTime((this.timestamps[0])/10).endTime((this.timestamps[this.timestamps.length - 1])/10);
 
         this.converters.forEach(converter => converter.getMetadata(xb));
         xb.ui(getDeclarativeUI());

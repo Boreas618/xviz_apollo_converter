@@ -60,7 +60,7 @@ module.exports = async function main() {
   // any unnecessary complications
   for (let i = 0; i < limit; i++) {
     const xvizMessage = await converter.convertMessage(i);
-    console.log(JSON.stringify(xvizMessage));
+    //console.log(JSON.stringify(xvizMessage));
     xvizWriter.writeMessage(i, xvizMessage);
   }
 

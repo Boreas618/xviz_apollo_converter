@@ -22,7 +22,7 @@ export default class GPSConverter extends BaseConverter {
 
     async convertMessage(messageIndex, xvizBuilder) {
         const originX = this.poses[0].pose.positionX;
-        const originY = this.poses[0].pose.positionX;
+        const originY = this.poses[0].pose.positionY;
         const originZ = 0;
 
         const info = this.poses[messageIndex];
@@ -37,34 +37,34 @@ export default class GPSConverter extends BaseConverter {
         //console.log(acceleration.val);
 
         xvizBuilder
-            .timestamp(parseInt(pose.index));
+            .timestamp((parseInt(pose.index)/10));
 
         xvizBuilder
-            .pose('/vechile_pose')
-            .timestamp(parseInt(pose.index))
-            .mapOrigin(originX, originY, originZ)
-            .position(pose.positionX, pose.positionY, 0)
-            .orientation(pose.heading, 0, 0);
+            .pose('/vehicle_pose')
+            .timestamp((parseInt(pose.index)+1)/10)
+            .mapOrigin(0,0,0)
+            .position(pose.positionX - originX, pose.positionY -originY, 0)
+            .orientation(0, 0, pose.heading);
 
         xvizBuilder
             .timeSeries(this.VEHICLE_VELOCITY)
-            .timestamp(parseInt(pose.index))
+            .timestamp((parseInt(pose.index)+1)/10)
             .value(velocity.val);
 
         xvizBuilder
             .timeSeries(this.VEHICLE_ACCELERATION)
-            .timestamp(parseInt(pose.index))
+            .timestamp((parseInt(pose.index)+1)/10)
             .value(acceleration.val);
 
         xvizBuilder
             .timeSeries(this.VEHICLE_WHEEL)
-            .timestamp(parseInt(pose.index))
+            .timestamp((parseInt(pose.index)+1)/10)
             .value(0);
 
         // apollo dataset is always under autonomous mode
         xvizBuilder
             .timeSeries(this.VEHICLE_AUTONOMOUS)
-            .timestamp(parseInt(pose.index))
+            .timestamp((parseInt(pose.index)+1)/10)
             .value('autonomous');
 
         const poseTrajectory = this._getPoseTrajectory(
