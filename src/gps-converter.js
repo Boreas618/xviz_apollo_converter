@@ -1,6 +1,5 @@
 import BaseConverter from "./base-converter";
 import {parseJsonFile} from "./common";
-import {_getPoseTrajectory} from "@xviz/builder";
 
 export default class GPSConverter extends BaseConverter {
     constructor(rootDir, streamFile, data) {
@@ -10,6 +9,7 @@ export default class GPSConverter extends BaseConverter {
         this.VEHICLE_ACCELERATION = '/vehicle/acceleration';
         this.VEHICLE_VELOCITY = '/vehicle/velocity';
         this.VEHICLE_TRAJECTORY = '/vehicle/trajectory';
+        this.FULL_TRAJECTORY = '/vehicle/full_trajectory';
         this.VEHICLE_WHEEL = '/vehicle/wheel_angle';
         //this.VEHICLE_WHEEL = '/vehicle/wheel_angle';
         this.VEHICLE_AUTONOMOUS = '/vehicle/autonomy_state';
@@ -29,7 +29,7 @@ export default class GPSConverter extends BaseConverter {
 
         const {pose, velocity, acceleration} = info;
 
-        console.log(`processing message ${messageIndex+1}/${this.timestamps.length}\r`);
+        console.log(`processing message ${messageIndex + 1}/${this.timestamps.length}\r`);
 
         console.log(originX);
         console.log(originY);
@@ -37,34 +37,34 @@ export default class GPSConverter extends BaseConverter {
         //console.log(acceleration.val);
 
         xvizBuilder
-            .timestamp((parseInt(pose.index)/10));
+            .timestamp((parseInt(pose.index) / 10));
 
         xvizBuilder
             .pose('/vehicle_pose')
-            .timestamp((parseInt(pose.index)+1)/10)
-            .mapOrigin(0,0,0)
-            .position(pose.positionX - originX, pose.positionY -originY, 0)
+            .timestamp((parseInt(pose.index) + 1) / 10)
+            .mapOrigin(0, 0, 0)
+            .position(pose.positionX - originX, pose.positionY - originY, 0)
             .orientation(0, 0, pose.heading);
 
         xvizBuilder
             .timeSeries(this.VEHICLE_VELOCITY)
-            .timestamp((parseInt(pose.index)+1)/10)
+            .timestamp((parseInt(pose.index) + 1) / 10)
             .value(velocity.val);
 
         xvizBuilder
             .timeSeries(this.VEHICLE_ACCELERATION)
-            .timestamp((parseInt(pose.index)+1)/10)
+            .timestamp((parseInt(pose.index) + 1) / 10)
             .value(acceleration.val);
 
         xvizBuilder
             .timeSeries(this.VEHICLE_WHEEL)
-            .timestamp((parseInt(pose.index)+1)/10)
+            .timestamp((parseInt(pose.index) + 1) / 10)
             .value(0);
 
         // apollo dataset is always under autonomous mode
         xvizBuilder
             .timeSeries(this.VEHICLE_AUTONOMOUS)
-            .timestamp((parseInt(pose.index)+1)/10)
+            .timestamp((parseInt(pose.index) + 1) / 10)
             .value('autonomous');
 
         const poseTrajectory = this._getPoseTrajectory(
@@ -72,36 +72,41 @@ export default class GPSConverter extends BaseConverter {
             Math.min(messageIndex + 10, this.poses.length)
         );
 
+        const fullTrajectory = this._getPoseTrajectory(
+            messageIndex,
+            this.poses.length
+        );
+
         //console.log(poseTrajectory);
 
         xvizBuilder.primitive(this.VEHICLE_TRAJECTORY).polyline(poseTrajectory);
-
+        xvizBuilder.primitive(this.FULL_TRAJECTORY).polyline(poseTrajectory);
         //console.log(xvizBuilder);
     }
 
-    _convertPose(){
+    _convertPose() {
         const poses = [];
         const data = parseJsonFile("/Users/sunyi/WebstormProjects/apollo-converter/src/data", "data.json");
-        for(const index in data){
+        for (const index in data) {
             const resMap = {};
 
             //console.log(data[index]['gps'])
 
             resMap.pose = {
                 index,
-                positionX:data[index]['gps']['positionX'],
-                positionY:data[index]['gps']['positionY'],
-                heading:data[index]['gps']['heading']
+                positionX: data[index]['gps']['positionX'],
+                positionY: data[index]['gps']['positionY'],
+                heading: data[index]['gps']['heading']
             };
 
             resMap.velocity = {
                 index,
-                val:data[index]['autoDrivingCar']['speed']
+                val: data[index]['autoDrivingCar']['speed']
             };
 
             resMap.acceleration = {
                 index,
-                val:data[index]['autoDrivingCar']['speedAcceleration']
+                val: data[index]['autoDrivingCar']['speedAcceleration']
             };
 
             poses.push(resMap);
@@ -141,13 +146,24 @@ export default class GPSConverter extends BaseConverter {
                 stroke_width_min_pixels: 1
             })
 
+            .stream(this.FULL_TRAJECTORY)
+            .category('primitive')
+            .type('polyline')
+            .coordinate('IDENTITY')
+            .streamStyle({
+                stroke_color: '#000000',
+                stroke_width: 1.4,
+                stroke_width_min_pixels: 1
+            })
+
+
             .stream(this.VEHICLE_WHEEL)
             .category('time_series')
             .type('float')
             .unit('deg/s');
 
-            // This styling information is applied to *all* objects for this stream.
-            // It is possible to apply inline styling on individual object
+        // This styling information is applied to *all* objects for this stream.
+        // It is possible to apply inline styling on individual object
     }
 
     _getPoseTrajectory(startFrame, endFrame) {
@@ -158,7 +174,7 @@ export default class GPSConverter extends BaseConverter {
         for (let i = startFrame; i < endFrame; i++) {
             const currPose = this.poses[i];
             //console.log(this.poses[i].pose);
-            futurePoses.push([currPose.pose.positionX-originX, currPose.pose.positionY-originY, 0]);
+            futurePoses.push([currPose.pose.positionX - originX, currPose.pose.positionY - originY, 0]);
         }
         return futurePoses;
     }
