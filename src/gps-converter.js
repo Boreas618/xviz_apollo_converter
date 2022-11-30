@@ -80,7 +80,7 @@ export default class GPSConverter extends BaseConverter {
         //console.log(poseTrajectory);
 
         xvizBuilder.primitive(this.VEHICLE_TRAJECTORY).polyline(poseTrajectory);
-        xvizBuilder.primitive(this.FULL_TRAJECTORY).polyline(poseTrajectory);
+        xvizBuilder.primitive(this.FULL_TRAJECTORY).polyline(fullTrajectory);
         //console.log(xvizBuilder);
     }
 
